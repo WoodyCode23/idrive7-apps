@@ -2,7 +2,7 @@
   "id": "woodr_warmhud",
   "title": "Warm-Up HUD",
   "description": "Oil warm-up state on the head-up display: temperature, readiness and a safe-rev ceiling while the engine is cold",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "vendor": "custom",
   "loggingId": "OAA6",
   "iconGlyph": "warmup",

@@ -28,7 +28,7 @@ mgu.run({
 
         car.onSample(() => { lastSt = hud.update(car.live); });
 
-        process.on('exit', () => hud.stop());
+        process.on('exit', () => { clearInterval(hudTick); hud.stop(); });
 
         function drawState(cv, t) {
             G.panel(cv, t, 24, 44, 760, 468, 'Warm-up');
@@ -84,6 +84,12 @@ mgu.run({
 
         ui.onClick('BTN_ACTION', () => { settings.set('hud', settings.get('hud') === false); return render(); });
         settings.onChange(() => { hud.update(car.live); return render().catch(() => {}); });
+        /* the HUD must not depend on signal samples arriving: a parked car sends nothing for
+         * minutes, and the layer would never be made at all. Drive it on a timer as well. */
+        const hudTick = setInterval(() => { try { lastSt = hud.update(car.live); } catch (e) { log.warn('hud tick: ' + e); } }, 1000);
+        hudTick.unref && hudTick.unref();
+        lastSt = hud.update(car.live);
+
         ctx.loop('MAIN', 2, render);
         render().then(() => log.info('first frame done')).catch((e) => log.warn('first render: ' + e));
     },

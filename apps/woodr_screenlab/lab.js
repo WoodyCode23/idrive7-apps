@@ -21,7 +21,12 @@ const TARGETS = {
 };
 
 /* the HUD window measured by bimmer-lab (via redline/hud.js). A starting guess - replacing it is the point. */
-const KNOWN_SAFE = { hud: { x: 120, y: 100, w: 485, h: 278 } };
+const KNOWN_SAFE = {
+    /* measured by bimmer-lab (via redline/hud.js) - a starting guess, replacing it is the point */
+    hud: { x: 120, y: 100, w: 485, h: 278 },
+    /* IC_HIGH's own advertised safe area, read off this car with `carplay_patch.js status` */
+    map: { x: 286, y: 72, w: 504, h: 368 },
+};
 
 const AXIS = '#3ad1ff', GRID = '#4a4a4a', GRID10 = '#7a7a7a', EDGE = '#ff4d4d',
       SAFE = '#2fd27a', PROBE = '#ffd34d', TEXT = '#ffffff';
