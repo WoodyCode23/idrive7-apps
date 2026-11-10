@@ -13,6 +13,7 @@
  * Image layers only on the HUD - a heavy shader there has restarted the cluster on car.
  */
 
+/* labels repeat along the centre crosshair: the scene's edges are often outside what you can see */
 /* iDrive 7 scene sizes, from cluster-render's hello: map:1088x480,panel:1920x720,hud:800x480 */
 const TARGETS = {
     hud:   { w: 800,  h: 480, label: 'Head-up display' },
@@ -50,12 +51,12 @@ function drawGrid(p, W, H, step) {
     for (let x = 0; x <= W; x += step) {
         const major = x % (step * 2) === 0;
         p.rect(x, 0, 1, H, major ? GRID10 : GRID);
-        if (major && x > 0) p.text(String(x), x + 4, 20, 16, GRID10);
+        if (major && x > 0) { p.text(String(x), x + 4, 20, 16, GRID10); p.text(String(x), x + 4, H / 2 + 22, 18, AXIS); }
     }
     for (let y = 0; y <= H; y += step) {
         const major = y % (step * 2) === 0;
         p.rect(0, y, W, 1, major ? GRID10 : GRID);
-        if (major && y > 0) p.text(String(y), 4, y + 18, 16, GRID10);
+        if (major && y > 0) { p.text(String(y), 4, y + 18, 16, GRID10); p.text(String(y), W / 2 + 6, y + 18, 18, AXIS); }
     }
     p.rect(W / 2 - 1, 0, 2, H, AXIS);
     p.rect(0, H / 2 - 1, W, 2, AXIS);
