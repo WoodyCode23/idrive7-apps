@@ -13,12 +13,26 @@ const { WarmHud, state, revCeiling } = require('./hud');
 const W = 1600, H = 520;
 const APP_ID = 'woodr_warmhud';
 
+async function background(bg) {
+    const car = new Car(bg, ['temps', 'rpm', 'speed']);
+    const hud = new WarmHud(bg, APP_ID);
+    hud.start();
+    const tick = setInterval(() => { try { hud.update(car.live); } catch (e) { bg.log.warn('hud tick: ' + e); } }, 1000);
+    if (tick.unref) tick.unref();
+    car.onSample(() => hud.update(car.live));
+    bg.settings.onChange(() => hud.update(car.live));
+    process.on('exit', () => { clearInterval(tick); hud.stop(); });
+    hud.update(car.live);
+    return { car: car, hud: hud };
+}
+
 mgu.run({
+    background,
     async start(ctx) {
         const { ui, settings, log } = ctx;
-        const car = new Car(ctx, ['temps', 'rpm', 'speed']);
-        const hud = new WarmHud(ctx, APP_ID);
-        const hudOk = hud.start();
+        const bgm = ctx.background || await background(ctx);
+        const car = bgm.car, hud = bgm.hud;
+        const hudOk = hud.available();
         let lastSt = null;
 
         const num = (v) => (typeof v === 'number' && isFinite(v));
@@ -26,9 +40,6 @@ mgu.run({
         const unitF = () => settings.get('tempUnit') === 'f';
         const shown = (c) => (!num(c) ? '--' : Math.round(unitF() ? c * 9 / 5 + 32 : c) + String.fromCharCode(176) + (unitF() ? 'F' : 'C'));
 
-        car.onSample(() => { lastSt = hud.update(car.live); });
-
-        process.on('exit', () => { clearInterval(hudTick); hud.stop(); });
 
         function drawState(cv, t) {
             G.panel(cv, t, 24, 44, 760, 468, 'Warm-up');
@@ -83,13 +94,7 @@ mgu.run({
         }
 
         ui.onClick('BTN_ACTION', () => { settings.set('hud', settings.get('hud') === false); return render(); });
-        settings.onChange(() => { hud.update(car.live); return render().catch(() => {}); });
-        /* the HUD must not depend on signal samples arriving: a parked car sends nothing for
-         * minutes, and the layer would never be made at all. Drive it on a timer as well. */
-        const hudTick = setInterval(() => { try { lastSt = hud.update(car.live); } catch (e) { log.warn('hud tick: ' + e); } }, 1000);
-        hudTick.unref && hudTick.unref();
-        lastSt = hud.update(car.live);
-
+        settings.onChange(() => { lastSt = hud.update(car.live); return render().catch(() => {}); });
         ctx.loop('MAIN', 2, render);
         render().then(() => log.info('first frame done')).catch((e) => log.warn('first render: ' + e));
     },

@@ -112,6 +112,12 @@ class WarmHud {
     update(d) {
         if (!this.cr) return null;
         const on = this.ctx.settings.get('hud') !== false;
+        /* standing app: say we are here and on, and give way while another app (Redline) holds
+         * the HUD. Without this we would both draw and the last writer would win. */
+        try {
+            HudClaim.standing(this.id, on);
+            if (on && HudClaim.others(this.id).length) { if (this.layer) this.off(); return state(d.oil, Number(this.ctx.settings.get('readyAt')) || 90); }
+        } catch (e) { /* claims live on tmpfs; if they cannot be read, just carry on */ }
         const opts = { readyAt: Number(this.ctx.settings.get('readyAt')) || 90, tempUnit: this.ctx.settings.get('tempUnit') };
         const st = state(d.oil, opts.readyAt);
 
