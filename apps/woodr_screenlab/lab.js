@@ -24,10 +24,18 @@ const TARGETS = {
 /* the HUD window measured by bimmer-lab (via redline/hud.js). A starting guess - replacing it is the point. */
 const KNOWN_SAFE = {
     /* measured by bimmer-lab (via redline/hud.js) - a starting guess, replacing it is the point */
-    hud: { x: 120, y: 100, w: 485, h: 278 },
+    hud: { x: 120, y: 100, w: 570, h: 278 },             /* measured on this car from photos */
     /* IC_HIGH's own advertised safe area, read off this car with `carplay_patch.js status` */
     map: { x: 286, y: 72, w: 504, h: 368 },
 };
+
+/* BMW's own HUD content, from photos of this car: drawn as outlines so you can see what to avoid */
+const STOCK = { hud: [
+    { x: 120, y: 318, w: 220, h: 60, label: 'BMW speed (all views)' },
+    { x: 120, y: 105, w: 570, h: 77, label: 'BMW M view rev band' },
+    { x: 120, y: 105, w: 95, h: 140, label: '' },
+] };
+const SLOT = { hud: { x: 220, y: 185, w: 470, h: 133 } };
 
 const AXIS = '#3ad1ff', GRID = '#4a4a4a', GRID10 = '#7a7a7a', EDGE = '#ff4d4d',
       SAFE = '#2fd27a', PROBE = '#ffd34d', TEXT = '#ffffff';
@@ -132,6 +140,17 @@ function paint(p, target, opts) {
         p.rect(s.x, s.y, t, s.h, SAFE); p.rect(s.x + s.w - t, s.y, t, s.h, SAFE);
         p.text('known safe ' + s.x + ',' + s.y + ' ' + s.w + 'x' + s.h, s.x + 6, s.y - 8, 18, SAFE);
     }
+    if (opts.safe && STOCK[target]) {
+        STOCK[target].forEach(function (z) {
+            const t = 2, c = '#ff6ad5';
+            p.rect(z.x, z.y, z.w, t, c); p.rect(z.x, z.y + z.h - t, z.w, t, c);
+            p.rect(z.x, z.y, t, z.h, c); p.rect(z.x + z.w - t, z.y, t, z.h, c);
+            if (z.label) p.text(z.label, z.x + 6, z.y + 20, 16, c);
+        });
+        const sl = SLOT[target];
+        if (sl) { p.rect(sl.x, sl.y, sl.w, 1, '#2fd27a'); p.rect(sl.x, sl.y + sl.h - 1, sl.w, 1, '#2fd27a');
+                  p.text('clear in every view ' + sl.w + 'x' + sl.h, sl.x + 6, sl.y + 22, 16, '#2fd27a'); }
+    }
     let probe = null;
     if (mode === 'probe' || mode === 'grid') { probe = clampProbe(opts.probe, T.w, T.h); drawProbe(p, probe); }
     p.text(T.label + '  ' + T.w + 'x' + T.h, T.w / 2, T.h - 18, 22, TEXT, { font: 'bold', align: 'center' });
@@ -140,4 +159,4 @@ function paint(p, target, opts) {
     return probe;
 }
 
-module.exports = { driveModeOf: driveModeOf, TARGETS: TARGETS, KNOWN_SAFE: KNOWN_SAFE, pen: pen, paint: paint, clampProbe: clampProbe };
+module.exports = { STOCK: STOCK, SLOT: SLOT, driveModeOf: driveModeOf, TARGETS: TARGETS, KNOWN_SAFE: KNOWN_SAFE, pen: pen, paint: paint, clampProbe: clampProbe };

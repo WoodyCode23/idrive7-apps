@@ -17,8 +17,15 @@ let ClusterRender = null;
 try { ClusterRender = require('./cluster_render_client').ClusterRender; } catch (e) { /* reported by start() */ }
 
 const SCENE_W = 800, SCENE_H = 480;
-/* the part of the scene the driver actually sees (measured by bimmer-lab, via redline/hud.js) */
-const HUD_WINDOW = { x: 120, y: 100, w: 485, h: 278 };
+/* the part of the scene the driver actually sees - measured on THIS car from Screen Lab photos
+ * (top/bottom/left match bimmer-lab's 120,100 485x278; the right edge reaches ~690, not 605) */
+const HUD_WINDOW = { x: 120, y: 100, w: 570, h: 278 };
+/* BMW's own HUD content, seen in the same photos (scene px, approximate):
+ *   every view: speed limit + speed, bottom-left  x 120-340, y 318-378
+ *   M view:     rev band across the top           x 120-690, y 105-182
+ *               its diagonal down the left        x 120-215, y 105-245
+ * SLOT is what is left clear in every view, so placement needs no idea which view is on. */
+const SLOT = { x: 220, y: 185, w: 470, h: 133 };
 const IW = 400, IH = 120;
 const FPS = 5;                       /* warm-up moves slowly; no reason to burn cluster bandwidth */
 
@@ -93,15 +100,15 @@ class WarmHud {
         return true;
     }
 
-    /** scale and vertical position from settings, kept inside the visible window */
+    /** size and vertical position from settings, kept inside SLOT (clear of BMW's content in every view) */
     _rect() {
-        const s = (Number(this.ctx.settings.get('scale')) || 100) / 100;
+        let s = (Number(this.ctx.settings.get('scale')) || 100) / 100;
+        s = Math.min(s, SLOT.w / IW, SLOT.h / IH);               /* never larger than the clear slot */
         const w = Math.round(IW * s), h = Math.round(IH * s);
-        const x = Math.round(HUD_WINDOW.x + (HUD_WINDOW.w - w) / 2);
         let y = Number(this.ctx.settings.get('posY'));
-        if (!isFinite(y)) y = 140;
-        y = Math.max(HUD_WINDOW.y, Math.min(y, HUD_WINDOW.y + HUD_WINDOW.h - h));
-        return { x: x, y: y, w: w, h: h };
+        if (!isFinite(y)) y = SLOT.y;
+        y = Math.max(SLOT.y, Math.min(y, SLOT.y + SLOT.h - h));
+        return { x: SLOT.x, y: y, w: w, h: h };
     }
 
     off() {
@@ -153,4 +160,4 @@ class WarmHud {
     stop() { this.off(); if (this.cr) { try { this.cr.close(); } catch (e) { /* going away anyway */ } } }
 }
 
-module.exports = { WarmHud: WarmHud, state: state, revCeiling: revCeiling, HUD_WINDOW: HUD_WINDOW };
+module.exports = { WarmHud: WarmHud, state: state, revCeiling: revCeiling, HUD_WINDOW: HUD_WINDOW, SLOT: SLOT };
