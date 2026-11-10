@@ -35,7 +35,23 @@ mgu.run({
             log.warn('cluster_render_client missing - centre screen only');
         }
 
+        /* driving mode: stock HUD views differ by mode, so every pattern carries it */
+        let modeRaw = null;
+        const modeLabel = () => {
+            const m = Lab.driveModeOf(modeRaw);
+            return modeRaw === null ? '' : (m ? m.toUpperCase() : 'UNKNOWN') + ' (' + modeRaw + ')';
+        };
+        ctx.signals.watch('de.bmw.infotainment.drivingexcitement.FES', '1', {
+            statusFESVehicleDynamicSwitchHMI: (v) => {
+                const raw = v && v.actualValueModeDrivingExperience;
+                if (raw !== undefined && String(raw) !== String(modeRaw)) {
+                    modeRaw = raw; log.info('driving mode: ' + modeLabel()); render().catch(() => {});
+                }
+            },
+        }, log).then((sub) => { if (sub && sub.error) log.warn('FES: ' + sub.error); }).catch(() => {});
+
         const opts = () => ({
+            modeLabel: modeLabel(),
             pattern: settings.get('pattern') || 'grid',
             grid: Number(settings.get('grid')) || 50,
             safe: settings.get('safe') !== false,
@@ -92,6 +108,7 @@ mgu.run({
             const row = (k, v, colour) => { cv.text(k, 968, y, 22, t.dim); cv.text(v, 1240, y, 24, colour || t.text, { font: 'bold' }); y += 44; };
 
             row('Target', target);
+            row('Mode', modeLabel() || 'no signal yet', modeRaw === null ? t.dim : '#ffd34d');
             row('Scene', T ? T.w + ' x ' + T.h : 'centre screen 1600 x 520');
             if (probe) {
                 row('Probe x,y', probe.x + ', ' + probe.y, '#ffd34d');

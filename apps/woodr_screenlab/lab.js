@@ -32,6 +32,23 @@ const KNOWN_SAFE = {
 const AXIS = '#3ad1ff', GRID = '#4a4a4a', GRID10 = '#7a7a7a', EDGE = '#ff4d4d',
       SAFE = '#2fd27a', PROBE = '#ffd34d', TEXT = '#ffffff';
 
+/**
+ * The car's driving mode (FES actualValueModeDrivingExperience, a name or a wire number) -> 'sport',
+ * 'comfort', 'eco' or null. Same mapping as redline/hud.js driveModeOf (MPL-2.0, Robert Nisipeanu), so
+ * our apps and Redline agree on which HUD profile is live.
+ */
+function driveModeOf(raw) {
+    if (raw === undefined || raw === null) return null;
+    const n = Number(raw);
+    if (!isNaN(n) && String(raw).trim() !== '') {
+        return (n >= 1 && n <= 3) || n === 15 || n === 16 || n === 23 || n === 28 ? 'sport'
+            : (n >= 4 && n <= 6) || n === 10 || (n >= 17 && n <= 22) ? 'comfort' : n >= 7 && n <= 9 ? 'eco' : null;
+    }
+    const s = String(raw).toUpperCase();
+    return /SPORT|BOOST/.test(s) ? 'sport' : /HYBRID|ELECTRIC|BATTERY|ADAPTIV/.test(s) ? 'comfort' : /ECO/.test(s) ? 'eco'
+        : /COMFORT|TRAFFIC/.test(s) ? 'comfort' : null;
+}
+
 /** draw in target pixels onto any surface with fillRect + text, scaled by k and offset to ox,oy */
 function pen(surf, ox, oy, k) {
     return {
@@ -118,7 +135,9 @@ function paint(p, target, opts) {
     let probe = null;
     if (mode === 'probe' || mode === 'grid') { probe = clampProbe(opts.probe, T.w, T.h); drawProbe(p, probe); }
     p.text(T.label + '  ' + T.w + 'x' + T.h, T.w / 2, T.h - 18, 22, TEXT, { font: 'bold', align: 'center' });
+    /* label the photo: which driving mode (and so which stock HUD view) this pattern was shot in */
+    if (opts.modeLabel) p.text('MODE ' + opts.modeLabel, T.w / 2 + 8, T.h / 2 + 50, 24, PROBE, { font: 'bold' });
     return probe;
 }
 
-module.exports = { TARGETS: TARGETS, KNOWN_SAFE: KNOWN_SAFE, pen: pen, paint: paint, clampProbe: clampProbe };
+module.exports = { driveModeOf: driveModeOf, TARGETS: TARGETS, KNOWN_SAFE: KNOWN_SAFE, pen: pen, paint: paint, clampProbe: clampProbe };
