@@ -2,7 +2,7 @@
   "id": "woodr_warmhud",
   "title": "Warm-Up HUD",
   "description": "Oil warm-up state on the head-up display: temperature, readiness and a safe-rev ceiling while the engine is cold",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "vendor": "custom",
   "loggingId": "OAA6",
   "iconGlyph": "warmup",
@@ -59,25 +59,25 @@
     },
     {
       "key": "hideWhenReady",
-      "label": "Hide once ready",
+      "label": "Turn off once warm",
       "type": "choice",
       "default": "30",
       "options": [
         [
           "0",
-          "Keep showing"
+          "Never - keep showing"
         ],
         [
           "10",
-          "After 10 s"
+          "10 s after ready"
         ],
         [
           "30",
-          "After 30 s"
+          "30 s after ready"
         ],
         [
           "60",
-          "After 60 s"
+          "60 s after ready"
         ]
       ]
     },

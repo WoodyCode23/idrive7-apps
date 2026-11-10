@@ -68,7 +68,8 @@ mgu.run({
             if (!hudOk) { line = 'cluster-render not available'; colour = t.warn; }
             else if (!on) { line = 'Turned off in settings'; colour = t.dim; }
             else if (hud.layer) { line = 'Showing on the HUD'; colour = '#2fd27a'; }
-            else if (lastSt && lastSt.key === 'ready') { line = 'Hidden - engine is ready'; colour = t.dim; }
+            else if (hud.done) { line = 'Done for this drive - engine is warm'; colour = '#2fd27a'; }
+            else if (!(typeof car.live.oil === 'number')) { line = 'Waiting for the oil reading'; colour = t.dim; }
             else { line = 'Waiting for the HUD'; colour = t.dim; }
             cv.text(line, 828, 136, 34, colour, { font: 'bold' });
 

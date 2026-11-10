@@ -84,6 +84,9 @@ class WarmHud {
         this.ctx = ctx; this.log = ctx.log; this.id = id;
         this.cr = null; this.layer = null; this.claim = new HudClaim(id, ctx.log);
         this.readySince = 0; this.lastKey = '';
+        /* done = warm-up is over for this drive: the HUD stays off until the oil is properly cold again.
+         * firstOil = the first real oil reading, to spot a restart of an already-warm engine. */
+        this.done = false; this.firstOil = null;
     }
 
     available() { return !!ClusterRender; }
@@ -128,12 +131,30 @@ class WarmHud {
         const opts = { readyAt: Number(this.ctx.settings.get('readyAt')) || 90, tempUnit: this.ctx.settings.get('tempUnit') };
         const st = state(d.oil, opts.readyAt);
 
-        /* hide a while after it goes ready, if asked */
-        if (st.key === 'ready') { if (!this.readySince) this.readySince = Date.now(); } else { this.readySince = 0; }
         const hideAfter = Number(this.ctx.settings.get('hideWhenReady')) || 0;
-        const expired = hideAfter > 0 && this.readySince && (Date.now() - this.readySince) / 1000 > hideAfter;
+        const haveOil = typeof d.oil === 'number' && isFinite(d.oil);
 
-        if (!on || expired) { if (this.layer) this.off(); return st; }
+        if (haveOil && this.firstOil === null) {
+            this.firstOil = d.oil;
+            /* engine already warm when the car came on (a quick stop): nothing to warm up, never show */
+            if (hideAfter > 0 && d.oil >= opts.readyAt) { this.done = true; this.ctx.log.info('hud: engine already warm, staying off this drive'); }
+        }
+        /* re-arm only when the oil has gone properly cold again - 20 C under ready - so hovering
+         * around the threshold cannot flick it back on */
+        if (this.done && haveOil && d.oil < opts.readyAt - 20) { this.done = false; this.readySince = 0; this.ctx.log.info('hud: oil cold again, warm-up shown again'); }
+
+        /* the countdown starts at ready and only restarts if the oil falls properly back (5 C under
+         * ready): oil idling at 89-92 C would otherwise reset it on every dip and never turn off */
+        if (!this.done && haveOil) {
+            if (d.oil >= opts.readyAt) { if (!this.readySince) this.readySince = Date.now(); }
+            else if (d.oil < opts.readyAt - 5) this.readySince = 0;
+            if (hideAfter > 0 && this.readySince && (Date.now() - this.readySince) / 1000 >= hideAfter) {
+                this.done = true; this.ctx.log.info('hud: warm, hidden for the rest of this drive');
+            }
+        }
+
+        /* nothing to say until the first oil reading: no "OIL --" on the windshield */
+        if (!on || this.done || !haveOil) { if (this.layer) this.off(); return st; }
 
         const r = this._rect();
         if (!this.layer) {
