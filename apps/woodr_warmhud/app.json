@@ -1,8 +1,8 @@
 {
   "id": "woodr_warmhud",
   "title": "Warm-Up HUD",
-  "description": "Oil warm-up state on the head-up display: temperature, readiness and a safe-rev ceiling while the engine is cold",
-  "version": "0.4.0",
+  "description": "Warm-up on the head-up display: oil first, then the gearbox, then it turns itself off",
+  "version": "0.5.0",
   "vendor": "custom",
   "loggingId": "OAA6",
   "iconGlyph": "warmup",
@@ -17,6 +17,20 @@
     },
     "de.bmw.infotainment.vehicle.Vehicle2": {
       "statusCarSpeed2": "rs"
+    },
+    "de.bmw.infrastructure.analytics.BasicDataSet": {
+      "_optional": "gearbox oil temperature when the gearbox unit doesn't answer",
+      "basicDataSet": "s"
+    },
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_optional": "read-only diagnostics (UDS 22 only) to read the gearbox temperature",
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
     }
   },
   "screens": [
@@ -56,6 +70,30 @@
         95,
         100
       ]
+    },
+    {
+      "key": "trans",
+      "label": "Gearbox warm-up after oil",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "key": "transReady",
+      "label": "Gearbox ready above",
+      "type": "number",
+      "unit": "C",
+      "default": 70,
+      "steps": [
+        50,
+        60,
+        65,
+        70,
+        75,
+        80
+      ],
+      "when": {
+        "trans": true
+      }
     },
     {
       "key": "hideWhenReady",
